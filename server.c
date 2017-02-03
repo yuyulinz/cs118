@@ -13,8 +13,16 @@
 #include <netinet/in.h>  // constants and structures needed for internet domain addresses, e.g. sockaddr_in
 #include <stdlib.h>
 #include <strings.h>
+#include <string.h> //memset
+#include <unistd.h> //close
 #include <sys/wait.h>	/* for the waitpid() system call */
 #include <signal.h>	/* signal name macros, and the kill() prototype */
+
+void error(char *msg)
+{
+    perror(msg);
+    exit(1);
+}
 
 void fileHandler (int socksthecat)
 {
@@ -32,19 +40,16 @@ void fileHandler (int socksthecat)
     
     
     
+    
     return;
 }
 
-void error(char *msg)
-{
-    perror(msg);
-    exit(1);
-}
+
 
 int main(int argc, char *argv[])
 {
      int sockfd, newsockfd, portno, pid;
-     socklen_t clilen;
+     socklen_t clilen; //int of length at least 32-bits
      struct sockaddr_in serv_addr, cli_addr;
 
      if (argc < 2) {
@@ -58,10 +63,10 @@ int main(int argc, char *argv[])
      //fill in address info
      portno = atoi(argv[1]);
      serv_addr.sin_family = AF_INET;
-     serv_addr.sin_addr.s_addr = INADDR_ANY;
-     serv_addr.sin_port = htons(portno);
+     serv_addr.sin_addr.s_addr = INADDR_ANY; //sin_addr has one paramter, unsigned long. INADDR_ANY is server ip address
+     serv_addr.sin_port = htons(portno); //convert portno to network byte order, big endian??
      
-     if (bind(sockfd, (struct sockaddr *) &serv_addr,
+     if (bind(sockfd, (struct sockaddr *) &serv_addr, //serv_addr must be cast to sockaddr pointer
               sizeof(serv_addr)) < 0) 
               error("ERROR on binding");
      
@@ -70,7 +75,7 @@ int main(int argc, char *argv[])
     clilen = sizeof(cli_addr);
     
     //need to setup a persistent server
-    while (true)
+    while (1)
     {
         //accept connections
         newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
@@ -84,8 +89,8 @@ int main(int argc, char *argv[])
         
         else if (pid == 0)
         {
-            fileHandler(newsockfd);
             close(sockfd);
+            fileHandler(newsockfd);
             exit(0); //successful file transfer or request
         }
         
